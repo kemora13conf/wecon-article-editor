@@ -1,0 +1,105 @@
+export interface FontInfo {
+  name: string;
+  category: 'sans-serif' | 'serif' | 'monospace' | 'display' | 'system';
+  value?: string;
+  weight?: number[];
+}
+
+export const GOOGLE_FONTS: FontInfo[] = [
+  // Sans-serif
+  { name: 'Inter', category: 'sans-serif', weight: [100, 200, 300, 400, 500, 600, 700, 800, 900] },
+  { name: 'Roboto', category: 'sans-serif', weight: [100, 300, 400, 500, 700, 900] },
+  { name: 'Open Sans', category: 'sans-serif', weight: [300, 400, 500, 600, 700, 800] },
+  { name: 'Lato', category: 'sans-serif', weight: [100, 300, 400, 700, 900] },
+  { name: 'Montserrat', category: 'sans-serif', weight: [100, 200, 300, 400, 500, 600, 700, 800, 900] },
+  { name: 'Poppins', category: 'sans-serif', weight: [100, 200, 300, 400, 500, 600, 700, 800, 900] },
+  { name: 'Raleway', category: 'sans-serif', weight: [100, 200, 300, 400, 500, 600, 700, 800, 900] },
+  { name: 'Source Sans Pro', category: 'sans-serif', weight: [200, 300, 400, 600, 700, 900] },
+  { name: 'Nunito', category: 'sans-serif', weight: [200, 300, 400, 500, 600, 700, 800, 900] },
+  { name: 'Work Sans', category: 'sans-serif', weight: [100, 200, 300, 400, 500, 600, 700, 800, 900] },
+
+  // Serif
+  { name: 'Playfair Display', category: 'serif', weight: [400, 500, 600, 700, 800, 900] },
+  { name: 'Merriweather', category: 'serif', weight: [300, 400, 700, 900] },
+  { name: 'Lora', category: 'serif', weight: [400, 500, 600, 700] },
+  { name: 'PT Serif', category: 'serif', weight: [400, 700] },
+  { name: 'Crimson Text', category: 'serif', weight: [400, 600, 700] },
+  { name: 'EB Garamond', category: 'serif', weight: [400, 500, 600, 700, 800] },
+
+  // Monospace
+  { name: 'Roboto Mono', category: 'monospace', weight: [100, 200, 300, 400, 500, 600, 700] },
+  { name: 'Source Code Pro', category: 'monospace', weight: [200, 300, 400, 500, 600, 700, 900] },
+  { name: 'JetBrains Mono', category: 'monospace', weight: [100, 200, 300, 400, 500, 600, 700, 800] },
+  { name: 'Fira Code', category: 'monospace', weight: [300, 400, 500, 600, 700] },
+
+  // Display
+  { name: 'Oswald', category: 'display', weight: [200, 300, 400, 500, 600, 700] },
+  { name: 'Bebas Neue', category: 'display', weight: [400] },
+  { name: 'Anton', category: 'display', weight: [400] },
+  { name: 'Righteous', category: 'display', weight: [400] },
+];
+
+export const SYSTEM_FONTS: FontInfo[] = [
+  { name: 'System UI', value: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif', category: 'system' },
+  { name: 'Arial', value: 'Arial, sans-serif', category: 'system' },
+  { name: 'Helvetica', value: 'Helvetica, Arial, sans-serif', category: 'system' },
+  { name: 'Times New Roman', value: '"Times New Roman", Times, serif', category: 'system' },
+  { name: 'Georgia', value: 'Georgia, serif', category: 'system' },
+  { name: 'Courier New', value: '"Courier New", Courier, monospace', category: 'system' },
+  { name: 'Verdana', value: 'Verdana, sans-serif', category: 'system' },
+];
+
+const loadedFonts = new Set<string>();
+
+export const loadGoogleFont = (fontName: string, weights: number[] = [400]): Promise<void> => {
+  if (loadedFonts.has(fontName)) {
+    return Promise.resolve();
+  }
+
+  return new Promise((resolve, reject) => {
+    const fontFamily = fontName.replace(/\s+/g, '+');
+    const weightsParam = weights.join(';');
+    const link = document.createElement('link');
+
+    link.rel = 'stylesheet';
+    link.href = `https://fonts.googleapis.com/css2?family=${fontFamily}:wght@${weightsParam}&display=swap`;
+
+    link.onload = () => {
+      loadedFonts.add(fontName);
+      resolve();
+    };
+
+    link.onerror = () => {
+      reject(new Error(`Failed to load font: ${fontName}`));
+    };
+
+    document.head.appendChild(link);
+  });
+};
+
+export const getFontValue = (fontName: string): string => {
+  // Check if it's a system font
+  const systemFont = SYSTEM_FONTS.find(f => f.name === fontName);
+  if (systemFont) {
+    return systemFont.value || fontName;
+  }
+
+  // Check if it's a Google font
+  const googleFont = GOOGLE_FONTS.find(f => f.name === fontName);
+  if (googleFont) {
+    return `"${fontName}", ${googleFont.category}`;
+  }
+
+  // Default fallback
+  return fontName;
+};
+
+export const preloadPopularFonts = () => {
+  const popularFonts = ['Inter', 'Roboto', 'Montserrat', 'Playfair Display'];
+  popularFonts.forEach(font => {
+    const fontData = GOOGLE_FONTS.find(f => f.name === font);
+    if (fontData && fontData.weight) {
+      loadGoogleFont(font, [400, 700]);
+    }
+  });
+};
