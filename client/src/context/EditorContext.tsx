@@ -1,6 +1,9 @@
-import { createContext, useContext, useState, useCallback, ReactNode } from 'react';
+import { createContext, useContext, useState, useCallback, ReactNode, useEffect } from 'react';
+import { useQuery, useMutation } from '@tanstack/react-query';
+import { apiRequest, queryClient } from '@/lib/queryClient';
 import type { Block, Breakpoint } from '@shared/schema';
 import { createNewBlock } from '@/lib/blocks';
+import { useToast } from '@/hooks/use-toast';
 
 interface EditorState {
   blocks: Block[];
@@ -31,6 +34,12 @@ interface EditorContextType extends EditorState {
   exportToJSON: () => string;
   importFromJSON: (json: string) => void;
   clearAll: () => void;
+  saveArticle: () => void;
+  loadArticle: (id: number) => void;
+  createNewArticle: () => void;
+  currentArticleId: number | null;
+  isSaving: boolean;
+  isLoading: boolean;
 }
 
 const EditorContext = createContext<EditorContextType | undefined>(undefined);
@@ -56,6 +65,47 @@ export const EditorProvider = ({ children }: EditorProviderProps) => {
     articleTitle: 'Untitled Article',
     history: [[]],
     historyIndex: 0,
+  });
+
+  const [currentArticleId, setCurrentArticleId] = useState<number | null>(null);
+  const { toast } = useToast();
+
+  const saveMutation = useMutation({
+    mutationFn: async () => {
+      const article = {
+        title: state.articleTitle,
+        blocks: state.blocks,
+      };
+
+      if (currentArticleId) {
+        return await apiRequest(`/api/articles/${currentArticleId}`, {
+          method: 'PATCH',
+          body: JSON.stringify(article),
+        });
+      } else {
+        return await apiRequest('/api/articles', {
+          method: 'POST',
+          body: JSON.stringify(article),
+        });
+      }
+    },
+    onSuccess: (data) => {
+      if (!currentArticleId && data.id) {
+        setCurrentArticleId(data.id);
+      }
+      toast({
+        title: 'Saved',
+        description: 'Article saved successfully',
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/articles'] });
+    },
+    onError: () => {
+      toast({
+        title: 'Error',
+        description: 'Failed to save article',
+        variant: 'destructive',
+      });
+    },
   });
 
   const addToHistory = useCallback((blocks: Block[]) => {
@@ -275,6 +325,55 @@ export const EditorProvider = ({ children }: EditorProviderProps) => {
     addToHistory([]);
   }, [addToHistory]);
 
+  const saveArticle = useCallback(() => {
+    saveMutation.mutate();
+  }, [saveMutation]);
+
+  const loadArticle = useCallback(async (id: number) => {
+    try {
+      const article = await apiRequest(`/api/articles/${id}`);
+      setState(prev => ({
+        ...prev,
+        blocks: article.blocks || [],
+        articleTitle: article.title || 'Untitled Article',
+      }));
+      setCurrentArticleId(id);
+      addToHistory(article.blocks || []);
+      toast({
+        title: 'Loaded',
+        description: 'Article loaded successfully',
+      });
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to load article',
+        variant: 'destructive',
+      });
+    }
+  }, [addToHistory, toast]);
+
+  const createNewArticle = useCallback(() => {
+    setState(prev => ({
+      ...prev,
+      blocks: [],
+      selectedBlockId: null,
+      articleTitle: 'Untitled Article',
+      history: [[]],
+      historyIndex: 0,
+    }));
+    setCurrentArticleId(null);
+  }, []);
+
+  useEffect(() => {
+    const autoSaveInterval = setInterval(() => {
+      if (state.blocks.length > 0) {
+        saveMutation.mutate();
+      }
+    }, 30000);
+
+    return () => clearInterval(autoSaveInterval);
+  }, [state.blocks, currentArticleId, saveMutation]);
+
   const value: EditorContextType = {
     ...state,
     setBlocks,
@@ -295,6 +394,12 @@ export const EditorProvider = ({ children }: EditorProviderProps) => {
     exportToJSON,
     importFromJSON,
     clearAll,
+    saveArticle,
+    loadArticle,
+    createNewArticle,
+    currentArticleId,
+    isSaving: saveMutation.isPending,
+    isLoading: false,
   };
 
   return <EditorContext.Provider value={value}>{children}</EditorContext.Provider>;

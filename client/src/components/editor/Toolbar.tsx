@@ -1,4 +1,4 @@
-import { Undo, Redo, Download, Upload, Eye, Edit3, Smartphone, Tablet, Monitor, Trash2 } from 'lucide-react';
+import { Undo, Redo, Download, Upload, Eye, Edit3, Smartphone, Tablet, Monitor, Trash2, Save } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useEditor } from '@/context/EditorContext';
@@ -31,6 +31,8 @@ export const Toolbar = () => {
     exportToJSON,
     importFromJSON,
     clearAll,
+    saveArticle,
+    isSaving,
   } = useEditor();
   const { toast } = useToast();
 
@@ -174,6 +176,17 @@ export const Toolbar = () => {
         <Separator orientation="vertical" className="h-6" />
 
         <div className="flex items-center gap-1">
+          <Button
+            size="sm"
+            variant="default"
+            onClick={saveArticle}
+            disabled={isSaving}
+            className="h-8 text-xs"
+            data-testid="button-save"
+          >
+            <Save className="w-3.5 h-3.5 mr-1.5" />
+            {isSaving ? 'Saving...' : 'Save'}
+          </Button>
           <Button
             size="sm"
             variant="ghost"

@@ -9,6 +9,8 @@ import javascript from 'highlight.js/lib/languages/javascript';
 import typescript from 'highlight.js/lib/languages/typescript';
 import python from 'highlight.js/lib/languages/python';
 import 'highlight.js/styles/vs2015.css';
+import { useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 hljs.registerLanguage('javascript', javascript);
 hljs.registerLanguage('typescript', typescript);
@@ -24,6 +26,15 @@ export const BlockRenderer = ({ block, isSelected, onSelect }: BlockRendererProp
   const { updateBlock, deleteBlock, duplicateBlock, moveBlock, currentBreakpoint, mode } = useEditor();
   const blockRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLElement>(null);
+  
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: block.id, disabled: mode === 'preview' });
 
   const blockInfo = getBlockTypeInfo(block.type);
 
@@ -262,9 +273,16 @@ export const BlockRenderer = ({ block, isSelected, onSelect }: BlockRendererProp
     return null;
   };
 
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
   return (
     <div
-      ref={blockRef}
+      ref={setNodeRef}
+      style={style}
       onClick={onSelect}
       className={`relative group transition-all ${
         isSelected && isEditMode ? 'ring-2 ring-primary rounded-md' : ''
@@ -276,8 +294,10 @@ export const BlockRenderer = ({ block, isSelected, onSelect }: BlockRendererProp
           <Button
             size="icon"
             variant="ghost"
-            className="h-6 w-6 cursor-grab"
+            className="h-6 w-6 cursor-grab active:cursor-grabbing"
             data-testid={`button-drag-${block.id}`}
+            {...attributes}
+            {...listeners}
           >
             <GripVertical className="w-3.5 h-3.5" />
           </Button>

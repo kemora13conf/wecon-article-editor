@@ -3,9 +3,44 @@ import { useEditor } from '@/context/EditorContext';
 import { BlockRenderer } from './BlockRenderer';
 import { Button } from '@/components/ui/button';
 import { createNewBlock } from '@/lib/blocks';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
 
 export const EditorCanvas = () => {
-  const { blocks, selectedBlockId, selectBlock, addBlock, mode } = useEditor();
+  const { blocks, selectedBlockId, selectBlock, addBlock, mode, reorderBlocks } = useEditor();
+  
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (over && active.id !== over.id) {
+      const oldIndex = blocks.findIndex((b) => b.id === active.id);
+      const newIndex = blocks.findIndex((b) => b.id === over.id);
+      
+      if (oldIndex !== -1 && newIndex !== -1) {
+        reorderBlocks(oldIndex, newIndex);
+      }
+    }
+  };
 
   const handleBlockSelect = (blockId: string) => {
     if (mode === 'edit') {
@@ -37,16 +72,27 @@ export const EditorCanvas = () => {
             </Button>
           </div>
         ) : (
-          <div className="space-y-3" data-testid="editor-canvas">
-            {blocks.map((block) => (
-              <BlockRenderer
-                key={block.id}
-                block={block}
-                isSelected={selectedBlockId === block.id}
-                onSelect={() => handleBlockSelect(block.id)}
-              />
-            ))}
-          </div>
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleDragEnd}
+          >
+            <SortableContext
+              items={blocks.map((b) => b.id)}
+              strategy={verticalListSortingStrategy}
+            >
+              <div className="space-y-3" data-testid="editor-canvas">
+                {blocks.map((block) => (
+                  <BlockRenderer
+                    key={block.id}
+                    block={block}
+                    isSelected={selectedBlockId === block.id}
+                    onSelect={() => handleBlockSelect(block.id)}
+                  />
+                ))}
+              </div>
+            </SortableContext>
+          </DndContext>
         )}
       </div>
     </div>
