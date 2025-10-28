@@ -10,7 +10,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 export const BlockPalette = () => {
   const { addBlock } = useEditor();
   const [searchQuery, setSearchQuery] = useState('');
-  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set(['text']));
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set(['layout']));
 
   const toggleCategory = (category: string) => {
     setExpandedCategories(prev => {
@@ -40,17 +40,14 @@ export const BlockPalette = () => {
   }, {} as Record<string, typeof blockTypesByCategory[string]>);
 
   const categoryLabels: Record<string, string> = {
-    text: 'Text',
-    media: 'Media',
-    code: 'Code',
-    layout: 'Layout',
+    layout: 'Layout Containers',
   };
 
   return (
     <div className="w-[280px] border-r bg-sidebar flex flex-col h-full">
       <div className="p-4 border-b">
         <h2 className="text-xs font-semibold uppercase tracking-wide text-sidebar-foreground mb-3">
-          Block Library
+          Layout Blocks
         </h2>
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />

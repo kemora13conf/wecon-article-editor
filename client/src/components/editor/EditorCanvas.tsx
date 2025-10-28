@@ -49,7 +49,7 @@ export const EditorCanvas = () => {
   };
 
   const handleAddParagraph = () => {
-    const block = createNewBlock('paragraph');
+    const block = createNewBlock('section');
     addBlock(block);
   };
 
@@ -61,14 +61,14 @@ export const EditorCanvas = () => {
             <div className="w-32 h-32 rounded-full bg-muted flex items-center justify-center mb-6">
               <Plus className="w-12 h-12 text-muted-foreground" />
             </div>
-            <h2 className="text-2xl font-semibold mb-2">Start Building Your Article</h2>
+            <h2 className="text-2xl font-semibold mb-2">Start Building Your Layout</h2>
             <p className="text-muted-foreground mb-6 max-w-md">
-              Add blocks from the left sidebar to create your content. Choose from text, media, code,
-              and layout blocks.
+              Add layout containers from the left sidebar to create your page structure. 
+              Use Sections for vertical stacking and Flex Containers for horizontal layouts.
             </p>
             <Button onClick={handleAddParagraph} data-testid="button-add-first-paragraph">
               <Plus className="w-4 h-4 mr-2" />
-              Add Your First Block
+              Add Your First Container
             </Button>
           </div>
         ) : (

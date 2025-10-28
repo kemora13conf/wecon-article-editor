@@ -22,7 +22,7 @@ import type { StyleObject } from '@shared/schema';
 export const StyleEditor = () => {
   const { blocks, selectedBlockId, updateBlock, currentBreakpoint, selectBlock } = useEditor();
   const [expandedSections, setExpandedSections] = useState<Set<string>>(
-    new Set(['typography', 'spacing'])
+    new Set(['layout', 'spacing', 'dimensions'])
   );
 
   const selectedBlock = blocks.find((b) => b.id === selectedBlockId);

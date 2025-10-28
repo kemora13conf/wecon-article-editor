@@ -18,6 +18,7 @@ interface EditorState {
 interface EditorContextType extends EditorState {
   setBlocks: (blocks: Block[]) => void;
   addBlock: (block: Block, index?: number) => void;
+  addBlockToContainer: (parentId: string, block: Block) => void;
   updateBlock: (blockId: string, updates: Partial<Block>) => void;
   deleteBlock: (blockId: string) => void;
   duplicateBlock: (blockId: string) => void;
@@ -133,6 +134,29 @@ export const EditorProvider = ({ children }: EditorProviderProps) => {
       } else {
         newBlocks.push(block);
       }
+      addToHistory(newBlocks);
+      return { ...prev, blocks: newBlocks, selectedBlockId: block.id };
+    });
+  }, [addToHistory]);
+
+  const addBlockToContainer = useCallback((parentId: string, block: Block) => {
+    setState(prev => {
+      const addToParentRecursive = (blocks: Block[]): Block[] => {
+        return blocks.map(b => {
+          if (b.id === parentId) {
+            return {
+              ...b,
+              children: [...(b.children || []), block],
+            };
+          }
+          if (b.children) {
+            return { ...b, children: addToParentRecursive(b.children) };
+          }
+          return b;
+        });
+      };
+
+      const newBlocks = addToParentRecursive(prev.blocks);
       addToHistory(newBlocks);
       return { ...prev, blocks: newBlocks, selectedBlockId: block.id };
     });
@@ -378,6 +402,7 @@ export const EditorProvider = ({ children }: EditorProviderProps) => {
     ...state,
     setBlocks,
     addBlock,
+    addBlockToContainer,
     updateBlock,
     deleteBlock,
     duplicateBlock,

@@ -1,20 +1,11 @@
 import { useMemo, useRef, useEffect } from 'react';
-import { GripVertical, Copy, Trash2, ChevronUp, ChevronDown } from 'lucide-react';
-import type { Block, Breakpoint } from '@shared/schema';
-import { getBlockTypeInfo, applyStylesToElement } from '@/lib/blocks';
+import { GripVertical, Copy, Trash2, ChevronUp, ChevronDown, Plus } from 'lucide-react';
+import type { Block, Breakpoint, BlockType } from '@shared/schema';
+import { getBlockTypeInfo, applyStylesToElement, createNewBlock } from '@/lib/blocks';
 import { useEditor } from '@/context/EditorContext';
 import { Button } from '@/components/ui/button';
-import hljs from 'highlight.js/lib/core';
-import javascript from 'highlight.js/lib/languages/javascript';
-import typescript from 'highlight.js/lib/languages/typescript';
-import python from 'highlight.js/lib/languages/python';
-import 'highlight.js/styles/vs2015.css';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-
-hljs.registerLanguage('javascript', javascript);
-hljs.registerLanguage('typescript', typescript);
-hljs.registerLanguage('python', python);
 
 interface BlockRendererProps {
   block: Block;
@@ -23,7 +14,7 @@ interface BlockRendererProps {
 }
 
 export const BlockRenderer = ({ block, isSelected, onSelect }: BlockRendererProps) => {
-  const { updateBlock, deleteBlock, duplicateBlock, moveBlock, currentBreakpoint, mode } = useEditor();
+  const { updateBlock, deleteBlock, duplicateBlock, moveBlock, addBlockToContainer, currentBreakpoint, mode } = useEditor();
   const blockRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLElement>(null);
   
@@ -58,214 +49,80 @@ export const BlockRenderer = ({ block, isSelected, onSelect }: BlockRendererProp
     }
   }, [currentStyles]);
 
-  const handleContentChange = (newContent: string | string[]) => {
-    updateBlock(block.id, { content: newContent });
-  };
-
-  const handleTextInput = (e: React.FormEvent<HTMLDivElement>) => {
-    const text = e.currentTarget.textContent || '';
-    handleContentChange(text);
-  };
-
-  const handleListItemChange = (index: number, value: string) => {
-    if (Array.isArray(block.content)) {
-      const newList = [...block.content];
-      newList[index] = value;
-      handleContentChange(newList);
-    }
-  };
-
-  const addListItem = () => {
-    if (Array.isArray(block.content)) {
-      handleContentChange([...block.content, 'New item']);
-    }
-  };
-
-  const removeListItem = (index: number) => {
-    if (Array.isArray(block.content)) {
-      const newList = block.content.filter((_, i) => i !== index);
-      handleContentChange(newList);
-    }
-  };
-
   const isEditMode = mode === 'edit';
   const showControls = isEditMode && isSelected;
 
   const renderContent = () => {
-    const isTextBlock = ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'paragraph', 'caption', 'quote'].includes(block.type);
-
-    if (block.type === 'divider') {
-      return <hr ref={contentRef as any} />;
-    }
-
-    if (block.type === 'code' && typeof block.content === 'object' && block.content !== null && 'code' in block.content) {
-      const highlighted = useMemo(() => {
-        try {
-          return hljs.highlight(block.content.code, { language: block.content.language }).value;
-        } catch {
-          return block.content.code;
-        }
-      }, [block.content.code, block.content.language]);
-
-      return (
-        <div ref={contentRef as any} className="relative">
-          <pre className="rounded-md overflow-x-auto" style={{ margin: 0 }}>
-            <code
-              className={`hljs language-${block.content.language}`}
-              dangerouslySetInnerHTML={{ __html: highlighted }}
-            />
-          </pre>
-          {isEditMode && (
-            <div className="absolute top-2 right-2 text-xs bg-background/90 px-2 py-1 rounded">
-              {block.content.language}
-            </div>
-          )}
-        </div>
-      );
-    }
-
-    if (block.type === 'list' && Array.isArray(block.content)) {
-      return (
-        <ul ref={contentRef as any} style={{ listStyleType: 'disc' }}>
-          {block.content.map((item, index) => (
-            <li key={index} className="relative group">
-              <div
-                contentEditable={isEditMode}
-                suppressContentEditableWarning
-                onBlur={(e) => handleListItemChange(index, e.currentTarget.textContent || '')}
-                className={isEditMode ? 'outline-none focus:ring-1 ring-primary rounded px-1' : ''}
-              >
-                {item}
-              </div>
-              {isEditMode && (
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  className="absolute -right-8 top-0 h-6 w-6 opacity-0 group-hover:opacity-100"
-                  onClick={() => removeListItem(index)}
-                >
-                  <Trash2 className="w-3 h-3" />
-                </Button>
-              )}
-            </li>
-          ))}
-          {isEditMode && (
-            <li>
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={addListItem}
-                className="h-6 text-xs mt-1"
-              >
-                + Add item
-              </Button>
-            </li>
-          )}
-        </ul>
-      );
-    }
-
-    if (block.type === 'numbered-list' && Array.isArray(block.content)) {
-      return (
-        <ol ref={contentRef as any} style={{ listStyleType: 'decimal' }}>
-          {block.content.map((item, index) => (
-            <li key={index} className="relative group">
-              <div
-                contentEditable={isEditMode}
-                suppressContentEditableWarning
-                onBlur={(e) => handleListItemChange(index, e.currentTarget.textContent || '')}
-                className={isEditMode ? 'outline-none focus:ring-1 ring-primary rounded px-1' : ''}
-              >
-                {item}
-              </div>
-              {isEditMode && (
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  className="absolute -right-8 top-0 h-6 w-6 opacity-0 group-hover:opacity-100"
-                  onClick={() => removeListItem(index)}
-                >
-                  <Trash2 className="w-3 h-3" />
-                </Button>
-              )}
-            </li>
-          ))}
-          {isEditMode && (
-            <li>
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={addListItem}
-                className="h-6 text-xs mt-1"
-              >
-                + Add item
-              </Button>
-            </li>
-          )}
-        </ol>
-      );
-    }
-
-    if (block.type === 'image') {
-      return (
-        <div ref={contentRef as any} className="relative">
-          {block.content && typeof block.content === 'string' ? (
-            <img src={block.content} alt="Block image" className="w-full" />
-          ) : (
-            <div className="w-full h-48 bg-muted flex items-center justify-center text-muted-foreground text-sm">
-              Click to upload image
-            </div>
-          )}
-        </div>
-      );
-    }
-
-    if (block.type === 'video') {
-      return (
-        <div ref={contentRef as any} className="relative">
-          {block.content && typeof block.content === 'string' ? (
-            <video src={block.content} controls className="w-full" />
-          ) : (
-            <div className="w-full h-48 bg-muted flex items-center justify-center text-muted-foreground text-sm">
-              Click to upload video
-            </div>
-          )}
-        </div>
-      );
-    }
-
     if (block.type === 'section' || block.type === 'flex') {
+      const handleAddToContainer = (blockType: BlockType) => {
+        const newBlock = createNewBlock(blockType);
+        addBlockToContainer(block.id, newBlock);
+      };
+
       return (
-        <div ref={contentRef as any} className="min-h-[100px]">
+        <div ref={contentRef as any} className="min-h-[120px] relative">
           {block.children && block.children.length > 0 ? (
-            block.children.map((child) => (
-              <BlockRenderer
-                key={child.id}
-                block={child}
-                isSelected={false}
-                onSelect={() => {}}
-              />
-            ))
+            <div className={block.type === 'flex' ? 'flex gap-4' : 'space-y-3'}>
+              {block.children.map((child) => (
+                <BlockRenderer
+                  key={child.id}
+                  block={child}
+                  isSelected={false}
+                  onSelect={() => {}}
+                />
+              ))}
+            </div>
           ) : (
-            <div className="text-center text-muted-foreground text-sm py-8">
-              Drop blocks here
+            <div className="flex items-center justify-center h-full min-h-[120px]">
+              <div className="text-center py-8">
+                <div className="text-muted-foreground text-sm mb-4">
+                  Empty {block.type === 'flex' ? 'Flex Container' : 'Section'}
+                </div>
+                {isEditMode && (
+                  <div className="flex gap-2 justify-center">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleAddToContainer('section')}
+                    >
+                      <Plus className="w-3 h-3 mr-1" />
+                      Section
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleAddToContainer('flex')}
+                    >
+                      <Plus className="w-3 h-3 mr-1" />
+                      Flex
+                    </Button>
+                  </div>
+                )}
+              </div>
             </div>
           )}
-        </div>
-      );
-    }
-
-    if (isTextBlock) {
-      return (
-        <div
-          ref={contentRef as any}
-          contentEditable={isEditMode}
-          suppressContentEditableWarning
-          onInput={handleTextInput}
-          data-placeholder={`Enter ${blockInfo.label.toLowerCase()}...`}
-          className={isEditMode ? 'outline-none focus:ring-1 ring-primary rounded-sm px-1' : ''}
-        >
-          {typeof block.content === 'string' ? block.content : ''}
+          {isEditMode && block.children && block.children.length > 0 && (
+            <div className="flex gap-2 justify-center mt-4 pt-3 border-t border-dashed opacity-50 hover:opacity-100 transition-opacity">
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => handleAddToContainer('section')}
+                className="h-7 text-xs"
+              >
+                <Plus className="w-3 h-3 mr-1" />
+                Add Section
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => handleAddToContainer('flex')}
+                className="h-7 text-xs"
+              >
+                <Plus className="w-3 h-3 mr-1" />
+                Add Flex
+              </Button>
+            </div>
+          )}
         </div>
       );
     }
