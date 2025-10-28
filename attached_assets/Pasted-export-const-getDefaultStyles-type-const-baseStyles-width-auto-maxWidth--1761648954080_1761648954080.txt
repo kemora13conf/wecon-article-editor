@@ -1,0 +1,126 @@
+export const getDefaultStyles = (type) => {
+  const baseStyles = {
+    width: 'auto',
+    maxWidth: '100%',
+    minWidth: '0',
+    height: 'auto',
+    maxHeight: 'none',
+    minHeight: '0',
+    fontFamily: 'inherit',
+    fontSize: '1rem',
+    fontWeight: '400',
+    color: '#1f2937',
+    lineHeight: '1.6',
+    marginTop: '0',
+    marginBottom: '0.5rem',
+    marginLeft: '0',
+    marginRight: '0',
+    paddingTop: '0.5rem',
+    paddingBottom: '0.5rem',
+    paddingLeft: '0.5rem',
+    paddingRight: '0.5rem',
+    textAlign: 'left',
+    objectFit: 'cover',
+    objectPosition: 'center',
+    display: 'block',
+    flexDirection: 'row',
+    gap: '1rem',
+    alignItems: 'flex-start',
+    justifyContent: 'flex-start',
+    flexWrap: 'nowrap',
+    backgroundColor: 'transparent',
+    borderRadius: '0',
+    border: 'none',
+  };
+
+  const typeSpecificStyles = {
+    h1: { fontSize: '2.5rem', fontWeight: '700', marginBottom: '1.5rem', paddingTop: '0.5rem', paddingBottom: '0.5rem' },
+    h2: { fontSize: '2rem', fontWeight: '700', marginBottom: '1.25rem', paddingTop: '0.5rem', paddingBottom: '0.5rem' },
+    h3: { fontSize: '1.75rem', fontWeight: '600', marginBottom: '1rem', paddingTop: '0.5rem', paddingBottom: '0.5rem' },
+    h4: { fontSize: '1.5rem', fontWeight: '600', marginBottom: '1rem', paddingTop: '0.5rem', paddingBottom: '0.5rem' },
+    h5: { fontSize: '1.25rem', fontWeight: '600', marginBottom: '0.75rem', paddingTop: '0.5rem', paddingBottom: '0.5rem' },
+    h6: { fontSize: '1.1rem', fontWeight: '600', marginBottom: '0.75rem', paddingTop: '0.5rem', paddingBottom: '0.5rem' },
+    paragraph: { fontSize: '1rem', lineHeight: '1.75', marginBottom: '1rem' },
+    caption: { fontSize: '0.875rem', fontWeight: '400', color: '#6b7280', fontStyle: 'italic' },
+    quote: { 
+      fontSize: '1.125rem', 
+      fontStyle: 'italic', 
+      paddingLeft: '1.5rem', 
+      borderLeft: '4px solid #667eea',
+      color: '#4b5563',
+      marginBottom: '1rem',
+      paddingTop: '0.75rem',
+      paddingBottom: '0.75rem',
+    },
+    list: { 
+      fontSize: '1rem', 
+      lineHeight: '1.75', 
+      marginBottom: '1rem',
+      paddingLeft: '1.5rem',
+    },
+    'numbered-list': { 
+      fontSize: '1rem', 
+      lineHeight: '1.75', 
+      marginBottom: '1rem',
+      paddingLeft: '1.5rem',
+    },
+    code: { 
+      fontFamily: 'monospace',
+      fontSize: '0.875rem',
+      backgroundColor: '#1e293b',
+      color: '#e2e8f0',
+      padding: '1rem',
+      borderRadius: '0.5rem',
+      marginBottom: '1rem',
+    },
+    divider: {
+      height: '2px',
+      backgroundColor: '#e5e7eb',
+      border: 'none',
+      marginTop: '2rem',
+      marginBottom: '2rem',
+      paddingTop: '0',
+      paddingBottom: '0',
+      paddingLeft: '0',
+      paddingRight: '0',
+    },
+    image: { borderRadius: '0.5rem', marginBottom: '1rem', paddingTop: '0', paddingBottom: '0', paddingLeft: '0', paddingRight: '0' },
+    video: { borderRadius: '0.5rem', marginBottom: '1rem', paddingTop: '0', paddingBottom: '0', paddingLeft: '0', paddingRight: '0' },
+    flex: { display: 'flex', flexDirection: 'row', gap: '1rem', padding: '1.5rem', backgroundColor: '#f9fafb', borderRadius: '0.5rem', border: '2px dashed #e5e7eb' },
+    section: { display: 'block', padding: '2rem', backgroundColor: '#fffbeb', borderRadius: '0.5rem', border: '2px solid #fbbf24', marginBottom: '1.5rem' },
+  };
+
+  return { ...baseStyles, ...(typeSpecificStyles[type] || {}) };
+};
+
+export const getDefaultContent = (type) => {
+  const isTextBlock = ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'paragraph', 'caption', 'quote'].includes(type);
+  
+  if (type === 'code') {
+    return { code: '// Write your code here', language: 'javascript' };
+  }
+  
+  if (type === 'list') {
+    return ['List item 1', 'List item 2', 'List item 3'];
+  }
+  
+  if (type === 'numbered-list') {
+    return ['First item', 'Second item', 'Third item'];
+  }
+  
+  if (type === 'divider') {
+    return null;
+  }
+  
+  return isTextBlock ? '' : null;
+};
+
+export const createNewBlock = (type) => {
+  return {
+    id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+    type,
+    content: getDefaultContent(type),
+    styles: getDefaultStyles(type),
+    children: ['flex', 'section'].includes(type) ? [] : undefined,
+  };
+};
